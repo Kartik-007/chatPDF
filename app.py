@@ -8,6 +8,7 @@ from langchain.vectorstores import FAISS
 from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationalRetrievalChain
 from langchain.chat_models import ChatOpenAI
+from htmlTemplates import css, bot_template, user_template
 
 
 def get_pdf_text(pdf_docs):
@@ -48,7 +49,7 @@ def get_vectordatabase_hf(text_chunks):
     return vectordatabase
 
 def get_conversation_thread(vectordatabase):
-    llm = OpenAi()
+    llm = ChatOpenAI()
     memory = ConversationBufferMemory(memory_key='chat_history', return_messages=True)
     conversation_thread = ConversationalRetrievalChain.from_llm(
         llm=llm,
@@ -57,12 +58,36 @@ def get_conversation_thread(vectordatabase):
     )
     return conversation_thread
 
+def handle_userinput(user_input):
+    response = st.session_state.conversation_thread({'question' : user_input})
+    st.session_state.chat_history = response['chat_history']
+
+    for i, message in enumerate(st.session_state.chat_history):
+        if i % 2 == 0:
+            st.write(user_template.replace(
+                "{{MSG}}", message.content), unsafe_allow_html=True)
+        else:
+            st.write(bot_template.replace(
+                "{{MSG}}", message.content), unsafe_allow_html=True)
+
 
 def main():
     load_dotenv()
     st.set_page_config(page_title="chatPDF", page_icon=":books")
+
+    st.write(css, unsafe_allow_html=True)
+
+    if "conversation_thread" not in st.session_state:
+        st.session_state.conversation_thread = None
+        
+    if "chat_history" not in st.session_state:
+        st.session_state.chat_history = None
+
     st.header("chatPDF :books:")
-    st.text_input("Ask a question...")
+    user_input = st.text_input("Ask a question...")
+
+    if user_input:
+        handle_userinput(user_input)
 
     with st.sidebar:
         st.subheader("Your documents")
@@ -76,10 +101,10 @@ def main():
                 text_chunks = get_text_chunks(raw_text)
 
                 #create vector database
-                vectordatabase = get_vectordatabase_hf(text_chunks)
+                vectordatabase = get_vectordatabase_openAi(text_chunks)
 
                 #create a conersation thread
-                conversation_thread = get_conversation_thread(vectordatabase)
+                st.session_state.conversation_thread = get_conversation_thread(vectordatabase)
 
 
 
