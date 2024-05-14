@@ -21,3 +21,4 @@ The chatPDF application is an innovative Python-based tool designed to interacti
 5. **Response Generation:** The relevant text chunks are synthesized by the language model to craft a coherent and contextually relevant response based on the PDF content.
 
 
+![screenshot](Blank diagram.png)
